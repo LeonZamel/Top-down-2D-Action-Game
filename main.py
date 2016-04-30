@@ -22,6 +22,7 @@ class Game:
         self.all_sprites = pg.sprite.OrderedUpdates()
         # using orderedupdates so player will rendered last (on top)
         self.map_tiles = pg.sprite.Group()
+        self.walls = pg.sprite.Group()
         self.spritesheet = Spritesheet(os.path.join(img_folder, "tiles.png"))
 
     def new(self):
@@ -30,15 +31,16 @@ class Game:
         self.all_sprites = pg.sprite.OrderedUpdates()
         # using orderedupdates so player will rendered last (on top)
         self.map_tiles = pg.sprite.Group()
+        self.walls = pg.sprite.Group()
 
         # OBJECTS
         l = Level(self, "level.txt")
         # build() adds the tiles to the groups
         l.build()
-        player = Player()
+        self.player = Player()
 
         # ADD TO SPRITEGROUP IN RIGHT ORDER
-        self.all_sprites.add(player)
+        self.all_sprites.add(self.player)
         # run game AFTER everything is set up
         self.run()
 
@@ -55,11 +57,10 @@ class Game:
         # game loop - update
         self.all_sprites.update()
 
-        """if self.player.pos.x > 3 * (WIDTH / 4):
-            for sprite in self.all_sprites:
-                if sprite != self.player:
-                    sprite.rect.x -= self.player.vel.x
-            self.player.pos.x -= self.player.vel.x"""
+        hits = pg.sprite.spritecollide(self.player, self.walls, False)
+        if hits:
+            self.player.pos.y = hits[0].rect.top - self.player.rect.height / 2
+            self.player.vel.y = 0
 
     def events(self):
         # game loop - events

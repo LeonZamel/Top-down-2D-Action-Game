@@ -61,7 +61,7 @@ class Player(pg.sprite.Sprite):
         mouse = pg.mouse.get_pos()
         # calculate relative offset from mouse and angle
         self.mouse_offset = (mouse[1] - self.rect.centery, mouse[0] - self.rect.centerx)
-        self.rot = -90-math.degrees(math.atan2(*self.mouse_offset))
+        self.rot = round(-90-math.degrees(math.atan2(*self.mouse_offset)))
 
         # make sure image keeps center
         old_center = self.rect.center
@@ -86,8 +86,9 @@ class Spritesheet(object):
 class Tile(pg.sprite.Sprite):
     size = 32
 
-    def __init__(self):
+    def __init__(self, is_wall):
         pg.sprite.Sprite.__init__(self)
+        self.is_wall = is_wall
         self.image = pg.Surface((Tile.size, Tile.size))
         self.rect = self.image.get_rect()
 
@@ -104,12 +105,15 @@ class Level(object):
             for ln, line in enumerate(f.readlines()):
                 for cn, char in enumerate(line):
                     try:
-                        pos = KEY[char]
-                        t = Tile()
+                        pos = KEY[char][0]
+                        wall = KEY[char][1]
+                        t = Tile(wall)
                         t.image = self.game.spritesheet.get_image(pos[0], pos[1], Tile.size, Tile.size)
                         t.rect.x = cn * Tile.size
                         t.rect.y = ln * Tile.size
                         self.game.map_tiles.add(t)
                         self.game.all_sprites.add(t)
+                        if wall:
+                            self.game.walls.add(t)
                     except KeyError:
                         pass
