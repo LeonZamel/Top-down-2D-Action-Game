@@ -59,7 +59,7 @@ class Game:
 
         hits = pg.sprite.spritecollide(self.player, self.walls, False)
         if hits:
-            self.player.pos.y = hits[0].rect.top - self.player.rect.height / 2
+            self.player.rect.y = hits[0].rect.top - self.player.rect.height / 2
             self.player.vel.y = 0
 
     def events(self):

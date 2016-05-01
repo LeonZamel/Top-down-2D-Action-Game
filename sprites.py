@@ -9,12 +9,14 @@ vec = pg.math.Vector2
 class Player(pg.sprite.Sprite):
     def __init__(self):
         pg.sprite.Sprite.__init__(self)
-        self.image_orig = pg.image.load(os.path.join(img_folder, "Player.png")).convert_alpha()
+        self.playerspritesheet = Spritesheet(os.path.join(img_folder, "gunguy.png"))
+        self.image_orig = self.playerspritesheet.get_image(0, 0, 16, 16)
+        self.image_orig = pg.transform.scale(self.image_orig, (64, 64))
         self.image = self.image_orig
         self.rect = self.image.get_rect()
-        self.pos = vec(0, 0)
+        # self.pos = vec(0, 0)
         self.vel = vec(0, 0)
-        self.acc = vec(0, 0)
+        # self.acc = vec(0, 0)
         self.rot = 0
         self.mouse_offset = 0
 
@@ -23,38 +25,39 @@ class Player(pg.sprite.Sprite):
         self.rotate()
 
     def move(self):
-        # set acc to 0 when not pressing so it will stop accelerating
-        self.acc = vec(0, 0)
+        # set vel to 0 when not pressing so it will stop moving
+        self.vel = vec(0, 0)
 
         # move on buttonpress
         keystate = pg.key.get_pressed()
         if keystate[pg.K_w]:
-            self.acc.y = -PLAYER_ACC
+            self.vel.y = -PLAYER_SPEED
         if keystate[pg.K_a]:
-            self.acc.x = -PLAYER_ACC
+            self.vel.x = -PLAYER_SPEED
         if keystate[pg.K_s]:
-            self.acc.y = PLAYER_ACC
+            self.vel.y = PLAYER_SPEED
         if keystate[pg.K_d]:
-            self.acc.x = PLAYER_ACC
+            self.vel.x = PLAYER_SPEED
 
         # apply friction
-        self.acc += self.vel * PLAYER_FRICTION
+        # self.acc += self.vel * PLAYER_FRICTION
         # equations of motion
-        self.vel += self.acc
-        self.pos += self.vel + 0.5 * self.acc
-
+        # self.vel += self.acc
+        # self.pos += self.vel + 0.5 * self.acc
+        self.rect.x += self.vel.x
+        self.rect.y += self.vel.y
         # constrain to screen
-        if self.pos.x > WIDTH:
-            self.pos.x = WIDTH
-        if self.pos.x < 0:
-            self.pos.x = 0
-        if self.pos.y < 0:
-            self.pos.y = 0
-        if self.pos.y > HEIGHT:
-            self.pos.y = HEIGHT
+        if self.rect.x > WIDTH:
+            self.rect.x = WIDTH
+        if self.rect.x < 0:
+            self.rect.x = 0
+        if self.rect.y < 0:
+            self.rect.y = 0
+        if self.rect.y > HEIGHT:
+            self.rect.y = HEIGHT
 
         # set rect to new calculated pos
-        self.rect.center = self.pos
+        # self.rect.center = self.pos
 
     def rotate(self):
         # turns sprite to face towards mouse
@@ -79,7 +82,7 @@ class Spritesheet(object):
         # grab an image out of a larger spritesheet
         image = pg.Surface((width, height))
         image.blit(self.spritesheet, (0, 0), (x, y, width, height))
-        # image = pg.transform.scale(image, (width // 2, height // 2))
+        # image = pg.transform.scale(image, (width * 4, height * 4))
         return image
 
 
