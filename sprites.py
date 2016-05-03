@@ -7,45 +7,58 @@ vec = pg.math.Vector2
 
 # player class
 class Player(pg.sprite.Sprite):
-    def __init__(self):
+    def __init__(self, game):
         pg.sprite.Sprite.__init__(self)
-        self.playerspritesheet = Spritesheet(os.path.join(img_folder, "gunguy.png"))
-        self.image_orig = self.playerspritesheet.get_image(0, 0, 16, 16)
-        self.image_orig = pg.transform.scale(self.image_orig, (64, 64))
+        self.game = game
+        self.playerspritesheet = Spritesheet(os.path.join(img_folder, "gunguy2.png"))
+        self.image_orig = self.playerspritesheet.get_image(0, 0, 12, 12)
+        self.image_orig = pg.transform.scale(self.image_orig, (48, 48))
+        self.image_orig.set_colorkey(BLACK)
         self.image = self.image_orig
         self.rect = self.image.get_rect()
-        # self.pos = vec(0, 0)
+        self.hitbox = self.rect
+        self.pos = vec(0, 0)
         self.vel = vec(0, 0)
-        # self.acc = vec(0, 0)
+        self.acc = vec(0, 0)
         self.rot = 0
         self.mouse_offset = 0
 
     def update(self):
-        self.move()
         self.rotate()
+        self.move()
 
     def move(self):
-        # set vel to 0 when not pressing so it will stop moving
-        self.vel = vec(0, 0)
+        # set acc to 0 when not pressing so it will stop accelerating
+        self.acc = vec(0, 0)
 
         # move on buttonpress
         keystate = pg.key.get_pressed()
         if keystate[pg.K_w]:
-            self.vel.y = -PLAYER_SPEED
+            self.vel.y -= PLAYER_ACCELERATION
         if keystate[pg.K_a]:
-            self.vel.x = -PLAYER_SPEED
+            self.vel.x -= PLAYER_ACCELERATION
         if keystate[pg.K_s]:
-            self.vel.y = PLAYER_SPEED
+            self.vel.y += PLAYER_ACCELERATION
         if keystate[pg.K_d]:
-            self.vel.x = PLAYER_SPEED
+            self.vel.x += PLAYER_ACCELERATION
 
         # apply friction
-        # self.acc += self.vel * PLAYER_FRICTION
+        self.acc += self.vel * PLAYER_FRICTION
         # equations of motion
-        # self.vel += self.acc
-        # self.pos += self.vel + 0.5 * self.acc
-        self.rect.x += self.vel.x
-        self.rect.y += self.vel.y
+        self.vel += self.acc
+
+        # first x then y for better collision detection
+
+        self.pos.x += self.vel.x + 0.5 * self.acc.x
+        self.rect.center = self.pos
+        self.hitbox.center = self.pos
+        self.check_collision('x')
+
+        self.pos.y += self.vel.y + 0.5 * self.acc.y
+        self.rect.center = self.pos
+        self.hitbox.center = self.pos
+        self.check_collision('y')
+
         # constrain to screen
         if self.rect.x > WIDTH:
             self.rect.x = WIDTH
@@ -58,6 +71,26 @@ class Player(pg.sprite.Sprite):
 
         # set rect to new calculated pos
         # self.rect.center = self.pos
+
+    def check_collision(self, axis):
+        for wall in self.game.walls:
+            if self.hitbox.colliderect(wall):
+                if axis == 'x':
+                    if self.vel.x != 0:
+                        if self.vel.x < 0:
+                            self.hitbox.left = wall.rect.right
+                        elif self.vel.x > 0:
+                            self.hitbox.right = wall.rect.left
+                        self.pos.x = self.hitbox.centerx
+                        self.rect.centerx = self.hitbox.centerx
+                else:
+                    if self.vel.y != 0:
+                        if self.vel.y < 0:
+                            self.hitbox.top = wall.rect.bottom
+                        elif self.vel.y > 0:
+                            self.hitbox.bottom = wall.rect.top
+                        self.pos.y = self.hitbox.centery
+                        self.rect.centery = self.hitbox.centery
 
     def rotate(self):
         # turns sprite to face towards mouse

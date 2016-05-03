@@ -37,7 +37,7 @@ class Game:
         l = Level(self, "level.txt")
         # build() adds the tiles to the groups
         l.build()
-        self.player = Player()
+        self.player = Player(self)
 
         # ADD TO SPRITEGROUP IN RIGHT ORDER
         self.all_sprites.add(self.player)
@@ -57,10 +57,19 @@ class Game:
         # game loop - update
         self.all_sprites.update()
 
-        hits = pg.sprite.spritecollide(self.player, self.walls, False)
-        if hits:
-            self.player.rect.y = hits[0].rect.top - self.player.rect.height / 2
-            self.player.vel.y = 0
+        # collision detected by sprites
+    """if self.player.rect.left < hits[0].rect.right and self.player.vel.x < 0:
+            self.player.rect.left = hits[0].rect.right
+            self.player.vel = vec(0, 0)
+        elif self.player.rect.right > hits[0].rect.left and self.player.vel.x > 0:
+            self.player.rect.right = hits[0].rect.left
+            self.player.vel = vec(0, 0)
+        elif self.player.rect.top < hits[0].rect.bottom and self.player.vel.y < 0:
+            self.player.rect.top = hits[0].rect.bottom
+            self.player.vel = vec(0, 0)
+        elif self.player.rect.bottom > hits[0].rect.top and self.player.vel.y > 0:
+            self.player.rect.bottom = hits[0].rect.top
+            self.player.vel = vec(0, 0)"""
 
     def events(self):
         # game loop - events

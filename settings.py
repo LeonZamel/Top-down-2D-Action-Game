@@ -10,7 +10,8 @@ game_folder = os.path.dirname(__file__)
 img_folder = os.path.join(game_folder, "img")
 
 # player properties
-PLAYER_SPEED = 4
+PLAYER_ACCELERATION = 0.5
+PLAYER_FRICTION = -0.12
 
 # define colors
 WHITE = (255, 255, 255)
