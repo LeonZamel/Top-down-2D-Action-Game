@@ -10,36 +10,36 @@ import os
 
 class Game:
     def __init__(self):
-        # initialize game
+        # initialize game, pg and create window
         self.running = True
-        # initialize pg and create window
         pg.init()
         pg.mixer.init()
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
         self.playing = True
+
+        # using ordered updates so player will rendered last (on top)
         self.all_sprites = pg.sprite.OrderedUpdates()
-        # using orderedupdates so player will rendered last (on top)
         self.map_tiles = pg.sprite.Group()
         self.walls = pg.sprite.Group()
-        self.spritesheet = Spritesheet(os.path.join(img_folder, "tiles.png"))
+        self.spritesheet = Spritesheet(os.path.join(img_folder, "spritesheet.png"))
+        self.player = None
 
     def new(self):
         # start new game
-        # SPRITEGROUP
+        # SPRITE GROUPS
         self.all_sprites = pg.sprite.OrderedUpdates()
-        # using orderedupdates so player will rendered last (on top)
+        # using ordered updates so player will rendered last (on top)
         self.map_tiles = pg.sprite.Group()
         self.walls = pg.sprite.Group()
 
         # OBJECTS
         l = Level(self, "level.txt")
-        # build() adds the tiles to the groups
         l.build()
-        self.player = Player(self)
+        self.player = Player(self, 0, 0, 12, 12)
 
-        # ADD TO SPRITEGROUP IN RIGHT ORDER
+        # ADD TO SPRITE GROUP IN RIGHT ORDER
         self.all_sprites.add(self.player)
         # run game AFTER everything is set up
         self.run()
@@ -56,20 +56,7 @@ class Game:
     def update(self):
         # game loop - update
         self.all_sprites.update()
-
         # collision detected by sprites
-    """if self.player.rect.left < hits[0].rect.right and self.player.vel.x < 0:
-            self.player.rect.left = hits[0].rect.right
-            self.player.vel = vec(0, 0)
-        elif self.player.rect.right > hits[0].rect.left and self.player.vel.x > 0:
-            self.player.rect.right = hits[0].rect.left
-            self.player.vel = vec(0, 0)
-        elif self.player.rect.top < hits[0].rect.bottom and self.player.vel.y < 0:
-            self.player.rect.top = hits[0].rect.bottom
-            self.player.vel = vec(0, 0)
-        elif self.player.rect.bottom > hits[0].rect.top and self.player.vel.y > 0:
-            self.player.rect.bottom = hits[0].rect.top
-            self.player.vel = vec(0, 0)"""
 
     def events(self):
         # game loop - events

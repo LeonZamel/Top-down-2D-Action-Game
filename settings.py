@@ -5,6 +5,8 @@ HEIGHT = 1000
 FPS = 60
 TITLE = "Hotline Python!"
 
+PIXEL_MULT = 4
+TILESIZE = 8
 # set up assets path
 game_folder = os.path.dirname(__file__)
 img_folder = os.path.join(game_folder, "img")
@@ -22,9 +24,9 @@ BLUE = (0, 0, 255)
 
 # keys for tile position
 KEY = {
-    'S': [(0, 0), True],
-    'W': [(32, 0), False],
-    'G': [(0, 32), False],
+    'S': [(0, TILESIZE), True],
+    'W': [(0, 0), False],
+    'G': [(TILESIZE, 0), False],
     'N': [(32, 32), False]
 }
 
