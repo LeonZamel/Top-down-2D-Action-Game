@@ -17,7 +17,8 @@ class Player(pg.sprite.Sprite):
         self.image = self.image_orig
 
         self.rect = self.image.get_rect()
-        self.hitbox = pg.rect.Rect(self.rect.x, self.rect.y, (img_width - 2) * PIXEL_MULT, (img_height - 2) * PIXEL_MULT)
+        self.hitbox = pg.rect.Rect(self.rect.x, self.rect.y, (img_width - 2) * PIXEL_MULT,
+                                   (img_height - 2) * PIXEL_MULT)
 
         self.pos = vec(0, 0)
         self.vel = vec(0, 0)
@@ -79,21 +80,19 @@ class Player(pg.sprite.Sprite):
         for wall in self.game.walls:
             if self.hitbox.colliderect(wall):
                 if axis == 'x':
-                    if self.vel.x != 0:
-                        if self.vel.x < 0:
-                            self.hitbox.left = wall.rect.right
-                        elif self.vel.x > 0:
-                            self.hitbox.right = wall.rect.left
-                        self.pos.x = self.hitbox.centerx
-                        self.rect.centerx = self.hitbox.centerx
+                    if self.vel.x < 0:
+                        self.hitbox.left = wall.rect.right
+                    elif self.vel.x > 0:
+                        self.hitbox.right = wall.rect.left
+                    self.pos.x = self.hitbox.centerx
+                    self.rect.centerx = self.hitbox.centerx
                 else:
-                    if self.vel.y != 0:
-                        if self.vel.y < 0:
-                            self.hitbox.top = wall.rect.bottom
-                        elif self.vel.y > 0:
-                            self.hitbox.bottom = wall.rect.top
-                        self.pos.y = self.hitbox.centery
-                        self.rect.centery = self.hitbox.centery
+                    if self.vel.y < 0:
+                        self.hitbox.top = wall.rect.bottom
+                    elif self.vel.y > 0:
+                        self.hitbox.bottom = wall.rect.top
+                    self.pos.y = self.hitbox.centery
+                    self.rect.centery = self.hitbox.centery
 
     def rotate(self):
         # turns sprite to face towards mouse
@@ -126,8 +125,7 @@ class Tile(pg.sprite.Sprite):
     def __init__(self, is_wall):
         pg.sprite.Sprite.__init__(self)
         self.is_wall = is_wall
-        self.image = pg.Surface((TILESIZE * PIXEL_MULT, TILESIZE * PIXEL_MULT))
-        self.rect = self.image.get_rect()
+        self.image = None
 
 
 class Level(object):
@@ -146,6 +144,7 @@ class Level(object):
                         wall = KEY[char][1]
                         t = Tile(wall)
                         t.image = self.game.spritesheet.get_image(pos[0], pos[1], TILESIZE, TILESIZE)
+                        t.rect = t.image.get_rect()
                         t.rect.x = cn * TILESIZE * PIXEL_MULT
                         t.rect.y = ln * TILESIZE * PIXEL_MULT
                         self.game.map_tiles.add(t)
