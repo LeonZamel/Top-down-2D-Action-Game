@@ -10,35 +10,37 @@ import os
 
 class Game:
     def __init__(self):
-        # initialize game
+        # initialize game, pg and create window
         self.running = True
-        # initialize pg and create window
         pg.init()
         pg.mixer.init()
         self.screen = pg.display.set_mode((WIDTH, HEIGHT))
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
         self.playing = True
+
+        # using ordered updates so player will rendered last (on top)
         self.all_sprites = pg.sprite.OrderedUpdates()
-        # using orderedupdates so player will rendered last (on top)
         self.map_tiles = pg.sprite.Group()
-        self.spritesheet = Spritesheet(os.path.join(img_folder, "tiles.png"))
+        self.walls = pg.sprite.Group()
+        self.spritesheet = Spritesheet(os.path.join(img_folder, "spritesheet.png"))
+        self.player = None
 
     def new(self):
         # start new game
-        # SPRITEGROUP
+        # SPRITE GROUPS
         self.all_sprites = pg.sprite.OrderedUpdates()
-        # using orderedupdates so player will rendered last (on top)
+        # using ordered updates so player will rendered last (on top)
         self.map_tiles = pg.sprite.Group()
+        self.walls = pg.sprite.Group()
 
         # OBJECTS
         l = Level(self, "level.txt")
-        # build() adds the tiles to the groups
         l.build()
-        player = Player()
+        self.player = Player(self, 0, 0, 12, 12)
 
-        # ADD TO SPRITEGROUP IN RIGHT ORDER
-        self.all_sprites.add(player)
+        # ADD TO SPRITE GROUP IN RIGHT ORDER
+        self.all_sprites.add(self.player)
         # run game AFTER everything is set up
         self.run()
 
@@ -54,12 +56,7 @@ class Game:
     def update(self):
         # game loop - update
         self.all_sprites.update()
-
-        """if self.player.pos.x > 3 * (WIDTH / 4):
-            for sprite in self.all_sprites:
-                if sprite != self.player:
-                    sprite.rect.x -= self.player.vel.x
-            self.player.pos.x -= self.player.vel.x"""
+        # collision detected by sprites
 
     def events(self):
         # game loop - events
