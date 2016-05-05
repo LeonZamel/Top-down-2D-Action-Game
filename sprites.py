@@ -26,9 +26,12 @@ class Player(pg.sprite.Sprite):
         self.rot = 0
         self.mouse_offset = 0
 
+        self.current_weapon = Weapon(self.game)
+
     def update(self):
         self.rotate()
         self.move()
+        self.act()
 
     def move(self):
         # set acc to 0 when not pressing so it will stop accelerating
@@ -107,6 +110,14 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = old_center
 
+    def act(self):
+        key_state = pg.key.get_pressed()
+        if key_state[pg.K_SPACE]:
+            self.attack()
+
+    def attack(self):
+        self.current_weapon.shoot(self.rect.centerx, self.rect.centery)
+
 
 class Spritesheet(object):
     # utility class for loading and parsing sprite sheets
@@ -153,3 +164,33 @@ class Level(object):
                             self.game.walls.add(t)
                     except KeyError:
                         pass
+
+
+class Weapon(pg.sprite.Sprite):
+    def __init__(self, game):
+        pg.sprite.Sprite.__init__(self)
+        self.game = game
+        self.ammo = 10
+        self.delay = 100
+
+    def shoot(self, x, y):
+        b = Bullet(self.game, x, y)
+
+
+class Bullet(pg.sprite.Sprite):
+    def __init__(self, game, x, y):
+        pg.sprite.Sprite.__init__(self)
+        self.game = game
+        self.image = pg.Surface((1 * PIXEL_MULT, 2 * PIXEL_MULT))
+        self.image.fill(YELLOW)
+        self.rect = self.image.get_rect()
+        self.rect.center = (x, y)
+        self.game.all_sprites.add(self)
+
+        self.vel = vec(0, 5)
+
+    def update(self):
+        self.rect.x += self.vel.x
+        self.rect.y += self.vel.y
+        if self.rect.x > WIDTH or self.rect.x < 0 or self.rect.y > HEIGHT or self.rect.y < 0:
+            self.kill()
