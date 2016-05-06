@@ -2,7 +2,7 @@ import os
 
 WIDTH = 1000
 HEIGHT = 1000
-FPS = 60
+FPS = 120
 TITLE = "Hotline Python!"
 
 PIXEL_MULT = 4
@@ -12,7 +12,7 @@ game_folder = os.path.dirname(__file__)
 img_folder = os.path.join(game_folder, "img")
 
 # player properties
-PLAYER_ACCELERATION = 1
+PLAYER_ACCELERATION = 0.6
 PLAYER_FRICTION = -0.18
 
 # define colors
