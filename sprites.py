@@ -53,7 +53,7 @@ class Player(pg.sprite.Sprite):
         # equations of motion
         self.vel += self.acc
 
-        # first x then y for better collision detection
+        # first move x then y for better collision detection
 
         self.pos.x += self.vel.x + 0.5 * self.acc.x
         self.rect.center = self.pos
@@ -102,7 +102,7 @@ class Player(pg.sprite.Sprite):
         mouse = pg.mouse.get_pos()
         # calculate relative offset from mouse and angle
         self.mouse_offset = (mouse[1] - self.rect.centery, mouse[0] - self.rect.centerx)
-        self.rot = 180 + math.degrees(math.atan2(self.mouse_offset[1], self.mouse_offset[0]))
+        self.rot = 180 + round(math.degrees(math.atan2(self.mouse_offset[1], self.mouse_offset[0])), 1)
 
         # make sure image keeps center
         old_center = self.rect.center
@@ -111,11 +111,12 @@ class Player(pg.sprite.Sprite):
         self.rect.center = old_center
 
     def act(self):
-        key_state = pg.key.get_pressed()
-        if key_state[pg.K_SPACE]:
-            self.attack()
-        if key_state[pg.K_r]:
-            self.current_weapon.reload()
+        for event in self.game.all_events:
+            if event.type == pg.MOUSEBUTTONDOWN:
+                self.attack()
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_r:
+                    self.current_weapon.reload()
 
     def attack(self):
         self.current_weapon.shoot(self.rect.centerx, self.rect.centery, self.rot)
@@ -181,9 +182,9 @@ class Weapon(pg.sprite.Sprite):
         now = pg.time.get_ticks()
         if self.ammo > 0:
             if now - self.last_shot > self.delay:
-                # self.ammo -= 1
+                self.ammo -= 1
                 self.last_shot = now
-                b = Bullet(self.game, x, y, rot)
+                Bullet(self.game, x, y, rot)
 
     def reload(self):
         self.ammo = self.max_ammo
@@ -198,6 +199,7 @@ class Bullet(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.center = (x, y)
         self.game.all_sprites.add(self)
+        self.game.bullets.add(self)
 
         self.speed = 8
         self.vel = vec(0, 0)

@@ -18,11 +18,13 @@ class Game:
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
         self.playing = True
+        self.all_events = pg.event.get()
 
         # using ordered updates so player will rendered last (on top)
         self.all_sprites = pg.sprite.OrderedUpdates()
         self.map_tiles = pg.sprite.Group()
         self.walls = pg.sprite.Group()
+        self.bullets = pg.sprite.Group()
         self.spritesheet = Spritesheet(os.path.join(img_folder, "spritesheet.png"))
         self.player = None
 
@@ -49,7 +51,7 @@ class Game:
         self.playing = True
         while self.playing:
             self.clock.tick(FPS)
-            self.events()
+            self.handle_events()
             self.update()
             self.draw()
 
@@ -58,9 +60,11 @@ class Game:
         self.all_sprites.update()
         # collision detected by sprites
 
-    def events(self):
+    def handle_events(self):
         # game loop - events
-        for event in pg.event.get():
+        # sprites do event handling their selves, they iterate through self.all_events
+        self.all_events = pg.event.get()
+        for event in self.all_events:
             # check for closing window
             if event.type == pg.QUIT:
                 if self.playing:
