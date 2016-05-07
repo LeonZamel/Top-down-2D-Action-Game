@@ -14,7 +14,7 @@ class Game:
         self.running = True
         pg.init()
         pg.mixer.init()
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT), FLAGS)
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
         self.playing = True
@@ -39,10 +39,9 @@ class Game:
         # OBJECTS
         l = Level(self, "level.txt")
         l.build()
-        self.player = Player(self, 0, 0, 12, 12)
+        self.player = Player(self, 0, 0, 16, 16)
+        # ADD TO SPRITE GROUP IN RIGHT ORDER, init player last
 
-        # ADD TO SPRITE GROUP IN RIGHT ORDER
-        self.all_sprites.add(self.player)
         # run game AFTER everything is set up
         self.run()
 
@@ -70,6 +69,16 @@ class Game:
                 if self.playing:
                     self.playing = False
                 self.running = False
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    if self.playing:
+                        self.playing = False
+                    self.running = False
+                if event.key == pg.K_F11:
+                    if self.screen.get_flags() & pg.FULLSCREEN:
+                        pg.display.set_mode((WIDTH, HEIGHT), FLAGS)
+                    else:
+                        pg.display.set_mode((WIDTH, HEIGHT), FLAGS | pg.FULLSCREEN)
 
     def draw(self):
         # game loop - draw/ render
@@ -88,6 +97,7 @@ class Game:
         pass
 
 g = Game()
+g.show_start_screen()
 while g.running:
     g.new()
     g.show_go_screen()

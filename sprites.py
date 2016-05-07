@@ -15,7 +15,7 @@ class Player(pg.sprite.Sprite):
         self.image_orig = self.player_spritesheet.get_image(img_x, img_y, img_width, img_height)
         self.image_orig.set_colorkey(BLACK)
         self.image = self.image_orig
-
+        self.rect_orig = self.image.get_rect()
         self.rect = self.image.get_rect()
         self.hitbox = pg.rect.Rect(self.rect.x, self.rect.y, (img_width - 2) * PIXEL_MULT,
                                    (img_height - 2) * PIXEL_MULT)
@@ -27,6 +27,8 @@ class Player(pg.sprite.Sprite):
         self.mouse_offset = 0
 
         self.current_weapon = Weapon(self.game)
+        # add to group
+        self.game.all_sprites.add(self)
 
     def update(self):
         self.rotate()
@@ -140,6 +142,7 @@ class Tile(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self)
         self.is_wall = is_wall
         self.image = None
+        # adding to groups etc. is handled by Level class
 
 
 class Level(object):
@@ -173,7 +176,7 @@ class Weapon(pg.sprite.Sprite):
     def __init__(self, game):
         pg.sprite.Sprite.__init__(self)
         self.game = game
-        self.max_ammo = 10
+        self.max_ammo = 20
         self.ammo = self.max_ammo
         self.delay = 100
         self.last_shot = pg.time.get_ticks()
@@ -197,21 +200,26 @@ class Bullet(pg.sprite.Sprite):
         self.image = pg.Surface((1 * PIXEL_MULT, 1 * PIXEL_MULT))
         self.image.fill(YELLOW)
         self.rect = self.image.get_rect()
-        self.rect.center = (x, y)
-        self.game.all_sprites.add(self)
-        self.game.bullets.add(self)
-
-        self.speed = 8
         self.vel = vec(0, 0)
         self.pos = vec(self.rect.center)
-
+        # convert back to radians
         self.dir = math.radians(rot+90)
+        # set pos to "front mid" of player sprite
+        self.pos = vec(x + (self.game.player.rect_orig.width / 2) * math.cos(self.dir),
+                       y - (self.game.player.rect_orig.height / 2) * math.sin(self.dir))
         # calculates speed for given direction
-        self.vel = vec(self.speed * math.cos(self.dir), -(self.speed * math.sin(self.dir)))
+        self.vel = vec(BULLET_SPEED * math.cos(self.dir), -(BULLET_SPEED * math.sin(self.dir)))
+        self.rect.center = self.pos
+
+        # add to groups
+        self.game.all_sprites.add(self)
+        self.game.bullets.add(self)
 
     def update(self):
         self.pos.x += self.vel.x
         self.pos.y += self.vel.y
         self.rect.center = self.pos
-        if self.rect.x > WIDTH or self.rect.x < 0 or self.rect.y > HEIGHT or self.rect.y < 0:
+        if self.rect.x > WIDTH or self.rect.right < 0 or self.rect.top > HEIGHT or self.rect.y < 0:
+            self.kill()
+        if pg.sprite.spritecollide(self, self.game.walls, False):
             self.kill()
