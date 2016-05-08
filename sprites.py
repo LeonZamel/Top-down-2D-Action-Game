@@ -19,6 +19,7 @@ class Player(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.hitbox = pg.rect.Rect(self.rect.x, self.rect.y, (img_width - 2) * PIXEL_MULT,
                                    (img_height - 2) * PIXEL_MULT)
+        self.hitbox.center = self.rect_orig.center
 
         self.pos = vec(0, 0)
         self.vel = vec(0, 0)
@@ -26,7 +27,7 @@ class Player(pg.sprite.Sprite):
         self.rot = 0
         self.mouse_offset = 0
 
-        self.current_weapon = Weapon(self.game)
+        self.current_weapon = None
         # add to group
         self.game.all_sprites.add(self)
 
@@ -118,10 +119,22 @@ class Player(pg.sprite.Sprite):
                 self.attack()
             if event.type == pg.KEYDOWN:
                 if event.key == pg.K_r:
-                    self.current_weapon.reload()
+                    if self.current_weapon is not None:
+                        self.current_weapon.reload()
+                if event.key == pg.K_e:
+                    hits = pg.sprite.spritecollide(self, self.game.items, False)
+                    if hits:
+                        self.current_weapon = hits[0]
+                        hits[0].kill()
 
     def attack(self):
-        self.current_weapon.shoot(self.rect.centerx, self.rect.centery, self.rot)
+        if self.current_weapon is not None:
+            self.current_weapon.shoot(self.rect.centerx, self.rect.centery, self.rot)
+        else:
+            self.punch()
+
+    def punch(self):
+        pass
 
 
 class Spritesheet(object):
@@ -150,6 +163,7 @@ class Level(object):
     def __init__(self, game, level_file):
         self.level_file = level_file
         self.game = game
+        self.spritesheet = Spritesheet(os.path.join(img_folder, "spritesheet.png"))
 
     # adds all level tiles to group as sprites
     def build(self):
@@ -160,7 +174,7 @@ class Level(object):
                         pos = KEY[char][0]
                         wall = KEY[char][1]
                         t = Tile(wall)
-                        t.image = self.game.spritesheet.get_image(pos[0], pos[1], TILESIZE, TILESIZE)
+                        t.image = self.spritesheet.get_image(pos[0], pos[1], TILESIZE, TILESIZE)
                         t.rect = t.image.get_rect()
                         t.rect.x = cn * TILESIZE * PIXEL_MULT
                         t.rect.y = ln * TILESIZE * PIXEL_MULT
@@ -170,27 +184,6 @@ class Level(object):
                             self.game.walls.add(t)
                     except KeyError:
                         pass
-
-
-class Weapon(pg.sprite.Sprite):
-    def __init__(self, game):
-        pg.sprite.Sprite.__init__(self)
-        self.game = game
-        self.max_ammo = 20
-        self.ammo = self.max_ammo
-        self.delay = 100
-        self.last_shot = pg.time.get_ticks()
-
-    def shoot(self, x, y, rot):
-        now = pg.time.get_ticks()
-        if self.ammo > 0:
-            if now - self.last_shot > self.delay:
-                self.ammo -= 1
-                self.last_shot = now
-                Bullet(self.game, x, y, rot)
-
-    def reload(self):
-        self.ammo = self.max_ammo
 
 
 class Bullet(pg.sprite.Sprite):
@@ -205,7 +198,7 @@ class Bullet(pg.sprite.Sprite):
         # convert back to radians
         self.dir = math.radians(rot+90)
         # set pos to "front mid" of player sprite
-        self.pos = vec(x + (self.game.player.rect_orig.width / 2) * math.cos(self.dir),
+        self.pos = vec(x + (self.game.player.rect_orig.height / 2) * math.cos(self.dir),
                        y - (self.game.player.rect_orig.height / 2) * math.sin(self.dir))
         # calculates speed for given direction
         self.vel = vec(BULLET_SPEED * math.cos(self.dir), -(BULLET_SPEED * math.sin(self.dir)))
@@ -223,3 +216,39 @@ class Bullet(pg.sprite.Sprite):
             self.kill()
         if pg.sprite.spritecollide(self, self.game.walls, False):
             self.kill()
+
+
+class Weapon(pg.sprite.Sprite):
+    def __init__(self, game, m_ammo, s_delay):
+        # ONLY parent class, cant create Weapon() instance
+        pg.sprite.Sprite.__init__(self)
+        self.game = game
+        self.spritesheet = Spritesheet(os.path.join(img_folder, "Weapon_sheet.png"))
+        self.max_ammo = m_ammo
+        self.ammo = self.max_ammo
+        self.delay = s_delay
+        self.last_shot = pg.time.get_ticks()
+        self.game.all_sprites.add(self)
+        self.game.items.add(self)
+
+    def shoot(self, x, y, rot):
+        now = pg.time.get_ticks()
+        if self.ammo > 0:
+            if now - self.last_shot > self.delay:
+                self.ammo -= 1
+                self.last_shot = now
+                Bullet(self.game, x, y, rot)
+
+    def reload(self):
+        self.ammo = self.max_ammo
+
+
+class Gun(Weapon):
+    def __init__(self, game):
+        super(Gun, self).__init__(game, 20, 300)
+
+        self.image = self.spritesheet.get_image(0, 0, 8, 6)
+        self.image.set_colorkey(BLACK)
+        self.rect = self.image.get_rect()
+
+

@@ -25,21 +25,24 @@ class Game:
         self.map_tiles = pg.sprite.Group()
         self.walls = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
-        self.spritesheet = Spritesheet(os.path.join(img_folder, "spritesheet.png"))
+        self.items = pg.sprite.Group()
         self.player = None
 
     def new(self):
         # start new game
         # SPRITE GROUPS
-        self.all_sprites = pg.sprite.OrderedUpdates()
         # using ordered updates so player will rendered last (on top)
+        self.all_sprites = pg.sprite.OrderedUpdates()
         self.map_tiles = pg.sprite.Group()
         self.walls = pg.sprite.Group()
+        self.bullets = pg.sprite.Group()
+        self.items = pg.sprite.Group()
 
         # OBJECTS
         l = Level(self, "level.txt")
         l.build()
-        self.player = Player(self, 0, 0, 16, 16)
+        self.player = Player(self, 0, 0, 11, 13)
+        Gun(self)
         # ADD TO SPRITE GROUP IN RIGHT ORDER, init player last
 
         # run game AFTER everything is set up
