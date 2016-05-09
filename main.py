@@ -1,11 +1,6 @@
 # Hotline Python
 
-import pygame as pg
-import random
-import math
-from settings import *
-from sprites import *
-import os
+from mobs import *
 
 
 class Game:
