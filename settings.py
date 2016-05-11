@@ -12,7 +12,7 @@ TILESIZE = 8
 BULLET_SPEED = 16
 # set up assets path
 game_folder = os.path.dirname(__file__)
-img_folder = os.path.join(game_folder, "img")
+img_folder = "img"
 
 # player properties
 PLAYER_ACCELERATION = 0.8

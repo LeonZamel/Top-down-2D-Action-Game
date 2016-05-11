@@ -21,6 +21,8 @@ class Game:
         self.walls = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.items = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
+        self.enemies = pg.sprite.Group()
         self.player = None
 
     def new(self):
@@ -32,12 +34,18 @@ class Game:
         self.walls = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.items = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
+        self.enemies = pg.sprite.Group()
 
         # OBJECTS
         l = Level(self, "level.txt")
         l.build()
         self.player = Player(self, 0, 0, 11, 13)
-        Gun(self)
+        e1 = Enemy(self, 0, 0, 11, 13)
+        e1.pos.x = 300
+        e2 = Enemy(self, 0, 0, 11, 13)
+        e2.pos.y = 300
+        Pistol(self)
         # ADD TO SPRITE GROUP IN RIGHT ORDER, init player last
 
         # run game AFTER everything is set up

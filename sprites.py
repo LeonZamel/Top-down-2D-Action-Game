@@ -65,8 +65,9 @@ class Bullet(pg.sprite.Sprite):
         # convert back to radians
         self.dir = math.radians(rot+90)
         # set pos to "front mid" of player sprite
-        self.pos = vec(x + (self.game.player.rect_orig.height / 2) * math.cos(self.dir),
-                       y - (self.game.player.rect_orig.height / 2) * math.sin(self.dir))
+        # spawn away far enough so it won't count as hit
+        self.pos = vec(x + (self.game.player.rect_orig.height / 2 + BULLET_SPEED) * math.cos(self.dir),
+                       y - (self.game.player.rect_orig.height / 2 + BULLET_SPEED) * math.sin(self.dir))
         # calculates speed for given direction
         self.vel = vec(BULLET_SPEED * math.cos(self.dir), -(BULLET_SPEED * math.sin(self.dir)))
         self.rect.center = self.pos
@@ -110,9 +111,9 @@ class Weapon(pg.sprite.Sprite):
         self.ammo = self.max_ammo
 
 
-class Gun(Weapon):
+class Pistol(Weapon):
     def __init__(self, game):
-        super(Gun, self).__init__(game, 20, 300)
+        super(Pistol, self).__init__(game, 20, 150)
         self.image = self.spritesheet.get_image(0, 0, 8, 6)
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
