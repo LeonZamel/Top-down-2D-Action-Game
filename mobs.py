@@ -1,9 +1,10 @@
 from sprites import *
+import random
 # Moving objects (technically sprites)
 
 
 class Mob(pg.sprite.Sprite):
-    def __init__(self, game, img_x, img_y, img_width, img_height, spritesheet_file, stop_game):
+    def __init__(self, game, img_x, img_y, img_width, img_height, spritesheet_file, stop_game, spawn=(0, 0)):
         pg.sprite.Sprite.__init__(self)
         self.game = game
         # stop game if hit
@@ -19,7 +20,7 @@ class Mob(pg.sprite.Sprite):
                                    self.rect_orig.height - 2 * PIXEL_MULT)
         self.hitbox.center = self.rect_orig.center
 
-        self.pos = vec(0, 0)
+        self.pos = vec(spawn[0], spawn[1])
         self.vel = vec(0, 0)
         self.acc = vec(0, 0)
         self.rot = 0
@@ -30,9 +31,9 @@ class Mob(pg.sprite.Sprite):
         self.game.mobs.add(self)
 
     def update(self):
-        self.rotate()
-        self.move()
         self.act()
+        self.move()
+        self.rotate()
         self.check_hit(self.stop_game)
 
     def check_collision(self, axis):
@@ -58,6 +59,8 @@ class Mob(pg.sprite.Sprite):
             if self.hitbox.colliderect(bullet):
                 bullet.kill()
                 self.kill()
+                if self.current_weapon is not None:
+                    self.current_weapon.kill()
                 if stop_playing:
                     self.game.playing = False
 
@@ -72,8 +75,8 @@ class Mob(pg.sprite.Sprite):
 
 
 class Player(Mob):
-    def __init__(self, game, img_x, img_y, img_width, img_height):
-        super(Player, self).__init__(game, img_x, img_y, img_width, img_height, "gunguy.png", True)
+    def __init__(self, game, spawn):
+        super(Player, self).__init__(game, 0, 0, 11, 13, "gunguy.png", True, spawn)
         self.mouse_offset = 0
 
     def move(self):
@@ -144,31 +147,45 @@ class Player(Mob):
                     if self.current_weapon is not None:
                         self.current_weapon.reload()
                 if event.key == pg.K_e:
-                    hits = pg.sprite.spritecollide(self, self.game.items, False)
+                    hits = pg.sprite.spritecollide(self, self.game.items, True)
                     if hits:
                         self.current_weapon = hits[0]
-                        hits[0].kill()
 
 
 class Enemy(Mob):
     seeing_player = False
+    last_seen_player = pg.time.get_ticks()
 
-    def __init__(self, game, img_x, img_y, img_width, img_height):
-        super(Enemy, self).__init__(game, img_x, img_y, img_width, img_height, "gunguy.png", False)
+    def __init__(self, game, spawn):
+        super(Enemy, self).__init__(game, 0, 0, 11, 13, "gunguy.png", False, spawn)
+        self.player_offset = 0
 
     def move(self):
         # set acc to 0 when not pressing so it will stop accelerating
         self.acc = vec(0, 0)
 
         if Enemy.seeing_player is True:
-            if self.game.player.pos.x > self.pos.x:
+            if self.game.player.pos.x > self.pos.x and self.game.player.pos.x > self.pos.x + 200:
                 self.vel.x += PLAYER_ACCELERATION
-            if self.game.player.pos.x < self.pos.x:
+            if self.game.player.pos.x < self.pos.x and self.game.player.pos.x < self.pos.x - 200:
                 self.vel.x -= PLAYER_ACCELERATION
-            if self.game.player.pos.y > self.pos.y:
+            if self.game.player.pos.y > self.pos.y and self.game.player.pos.y > self.pos.y + 200:
                 self.vel.y += PLAYER_ACCELERATION
-            if self.game.player.pos.y < self.pos.y:
+            if self.game.player.pos.y < self.pos.y and self.game.player.pos.y < self.pos.y - 200:
                 self.vel.y -= PLAYER_ACCELERATION
+
+        else:
+            choice = random.randrange(1, 5)
+            if choice == 1:
+                self.vel.x += PLAYER_ACCELERATION
+            elif choice == 2:
+                self.vel.x -= PLAYER_ACCELERATION
+            elif choice == 3:
+                self.vel.y += PLAYER_ACCELERATION
+            elif choice == 4:
+                self.vel.y -= PLAYER_ACCELERATION
+            else:
+                pass
 
         # apply friction
         self.acc += self.vel * PLAYER_FRICTION
@@ -202,11 +219,28 @@ class Enemy(Mob):
         self.hitbox.center = self.pos
 
     def rotate(self):
-        pass
+        # turns sprite to face towards player
+        # calculate relative offset from player and angle
+        if Enemy.seeing_player:
+            self.player_offset = (self.game.player.pos.y - self.rect.centery, self.game.player.pos.x - self.rect.centerx)
+            self.rot = 180 + round(math.degrees(math.atan2(self.player_offset[1], self.player_offset[0])), 1)
+
+        # make sure image keeps center
+        old_center = self.rect.center
+        self.image = pg.transform.rotate(self.image_orig, self.rot)
+        self.rect = self.image.get_rect()
+        self.rect.center = old_center
 
     def act(self):
+        if self.current_weapon.ammo == 0:
+            self.current_weapon.reload()
         self.look_for_player()
+        if Enemy.seeing_player and abs(self.pos.x - self.game.player.pos.x) <= 400 and abs(self.pos.y - self.game.player.pos.y) <= 400:
+            self.attack()
 
     def look_for_player(self):
-        if abs(self.pos.x - self.game.player.pos.x) < 200 and abs(self.pos.y - self.game.player.pos.y) < 200:
+        if abs(self.pos.x - self.game.player.pos.x) <= 500 and abs(self.pos.y - self.game.player.pos.y) <= 500:
+            Enemy.last_seen_player = pg.time.get_ticks()
             Enemy.seeing_player = True
+        elif Enemy.last_seen_player + 2000 < pg.time.get_ticks():
+            Enemy.seeing_player = False

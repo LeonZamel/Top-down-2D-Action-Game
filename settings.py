@@ -1,21 +1,21 @@
 import os
 import pygame as pg
 
-WIDTH = 1000
-HEIGHT = 1000
+WIDTH = 1920
+HEIGHT = 1080
 FPS = 120
 TITLE = "Hotline Python!"
 FLAGS = pg.DOUBLEBUF | pg.HWSURFACE
 
 PIXEL_MULT = 4
 TILESIZE = 8
-BULLET_SPEED = 16
+BULLET_SPEED = 20
 # set up assets path
 game_folder = os.path.dirname(__file__)
 img_folder = "img"
 
 # player properties
-PLAYER_ACCELERATION = 0.8
+PLAYER_ACCELERATION = 0.9
 PLAYER_FRICTION = -0.2
 
 # define colors

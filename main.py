@@ -9,7 +9,7 @@ class Game:
         self.running = True
         pg.init()
         pg.mixer.init()
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT), FLAGS)
+        self.screen = pg.display.set_mode((WIDTH, HEIGHT), FLAGS | pg.FULLSCREEN)
         pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
         self.playing = True
@@ -40,12 +40,13 @@ class Game:
         # OBJECTS
         l = Level(self, "level.txt")
         l.build()
-        self.player = Player(self, 0, 0, 11, 13)
-        e1 = Enemy(self, 0, 0, 11, 13)
-        e1.pos.x = 300
-        e2 = Enemy(self, 0, 0, 11, 13)
-        e2.pos.y = 300
-        Pistol(self)
+        self.player = Player(self, (500, 700))
+        Enemy.seeing_player = False
+        e1 = Enemy(self, (40, 40))
+        e1.current_weapon = pistol1 = Pistol(self)
+        e2 = Enemy(self, (1200, 700))
+        e2.current_weapon = pistol2 = Pistol(self)
+        self.player.current_weapon = pistol3 = Pistol(self)
         # ADD TO SPRITE GROUP IN RIGHT ORDER, init player last
 
         # run game AFTER everything is set up
@@ -62,6 +63,7 @@ class Game:
 
     def update(self):
         # game loop - update
+        pg.display.set_caption(TITLE + str(self.clock.get_fps()))
         self.all_sprites.update()
         # collision detected by sprites
 

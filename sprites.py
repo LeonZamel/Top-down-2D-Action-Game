@@ -76,6 +76,9 @@ class Bullet(pg.sprite.Sprite):
         self.game.all_sprites.add(self)
         self.game.bullets.add(self)
 
+        if pg.sprite.spritecollide(self, self.game.walls, False):
+            self.kill()
+
     def update(self):
         self.pos.x += self.vel.x
         self.pos.y += self.vel.y
@@ -88,7 +91,7 @@ class Bullet(pg.sprite.Sprite):
 
 class Weapon(pg.sprite.Sprite):
     def __init__(self, game, m_ammo, s_delay):
-        # ONLY parent class, cant create Weapon() instance
+        # ONLY parent class, can't create Weapon() instance
         pg.sprite.Sprite.__init__(self)
         self.game = game
         self.spritesheet = Spritesheet(os.path.join(img_folder, "Weapon_sheet.png"))
@@ -100,6 +103,8 @@ class Weapon(pg.sprite.Sprite):
         self.game.items.add(self)
 
     def shoot(self, x, y, rot):
+        if self.ammo == 0:
+            self.reload()
         now = pg.time.get_ticks()
         if self.ammo > 0:
             if now - self.last_shot > self.delay:
@@ -109,11 +114,12 @@ class Weapon(pg.sprite.Sprite):
 
     def reload(self):
         self.ammo = self.max_ammo
+        self.last_shot += 5 * self.delay
 
 
 class Pistol(Weapon):
     def __init__(self, game):
-        super(Pistol, self).__init__(game, 20, 150)
+        super(Pistol, self).__init__(game, 20, 200)
         self.image = self.spritesheet.get_image(0, 0, 8, 6)
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()
