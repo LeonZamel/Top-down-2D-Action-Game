@@ -17,7 +17,7 @@ class Game:
 
         # using ordered updates so player will rendered last (on top)
         self.all_sprites = pg.sprite.OrderedUpdates()
-        self.map_tiles = pg.sprite.Group()
+        self.map = pg.sprite.Group()
         self.walls = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.items = pg.sprite.Group()
@@ -30,7 +30,7 @@ class Game:
         # SPRITE GROUPS
         # using ordered updates so player will rendered last (on top)
         self.all_sprites = pg.sprite.OrderedUpdates()
-        self.map_tiles = pg.sprite.Group()
+        self.map = pg.sprite.Group()
         self.walls = pg.sprite.Group()
         self.bullets = pg.sprite.Group()
         self.items = pg.sprite.Group()
@@ -38,15 +38,15 @@ class Game:
         self.enemies = pg.sprite.Group()
 
         # OBJECTS
-        l = Level(self, "level.txt")
+        l = Level(self, "level.txt", 60, 34)
         l.build()
         self.player = Player(self, (500, 700))
         Enemy.seeing_player = False
         e1 = Enemy(self, (40, 40))
-        e1.current_weapon = pistol1 = Pistol(self)
+        e1.current_weapon = pistol1 = Pistol(self, False)
         e2 = Enemy(self, (1200, 700))
-        e2.current_weapon = pistol2 = Pistol(self)
-        self.player.current_weapon = pistol3 = Pistol(self)
+        e2.current_weapon = pistol2 = Pistol(self, False)
+        self.player.current_weapon = pistol3 = Pistol(self, False)
         # ADD TO SPRITE GROUP IN RIGHT ORDER, init player last
 
         # run game AFTER everything is set up
@@ -77,12 +77,12 @@ class Game:
                 if self.playing:
                     self.playing = False
                 self.running = False
-            if event.type == pg.KEYDOWN:
+            elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_ESCAPE:
                     if self.playing:
                         self.playing = False
                     self.running = False
-                if event.key == pg.K_F11:
+                elif event.key == pg.K_F11:
                     if self.screen.get_flags() & pg.FULLSCREEN:
                         pg.display.set_mode((WIDTH, HEIGHT), FLAGS)
                     else:

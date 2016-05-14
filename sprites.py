@@ -25,12 +25,15 @@ class Tile(pg.sprite.Sprite):
         # adding to groups etc. is handled by Level class
 
 
-class Level(object):
+class Level(pg.sprite.Sprite):
     # loads a level and makes its tiles
-    def __init__(self, game, level_file):
+    def __init__(self, game, level_file, t_width, t_height):
+        pg.sprite.Sprite.__init__(self)
         self.level_file = level_file
         self.game = game
         self.spritesheet = Spritesheet(os.path.join(img_folder, "spritesheet.png"))
+        self.image = pg.Surface((t_width * TILESIZE * PIXEL_MULT, t_height * TILESIZE * PIXEL_MULT))
+        self.rect = self.image.get_rect()
 
     # adds all level tiles to group as sprites
     def build(self):
@@ -45,12 +48,14 @@ class Level(object):
                         t.rect = t.image.get_rect()
                         t.rect.x = cn * TILESIZE * PIXEL_MULT
                         t.rect.y = ln * TILESIZE * PIXEL_MULT
-                        self.game.map_tiles.add(t)
-                        self.game.all_sprites.add(t)
+                        self.image.blit(t.image, (t.rect.x, t.rect.y))
                         if wall:
                             self.game.walls.add(t)
                     except KeyError:
                         pass
+
+            self.game.map.add(self)
+            self.game.all_sprites.add(self)
 
 
 class Bullet(pg.sprite.Sprite):
@@ -90,17 +95,20 @@ class Bullet(pg.sprite.Sprite):
 
 
 class Weapon(pg.sprite.Sprite):
-    def __init__(self, game, m_ammo, s_delay):
+    def __init__(self, game, m_ammo, s_delay, is_item):
         # ONLY parent class, can't create Weapon() instance
         pg.sprite.Sprite.__init__(self)
         self.game = game
         self.spritesheet = Spritesheet(os.path.join(img_folder, "Weapon_sheet.png"))
+        # is_item needed to know if should be rendered or not
+        self.is_item = is_item
         self.max_ammo = m_ammo
         self.ammo = self.max_ammo
         self.delay = s_delay
         self.last_shot = pg.time.get_ticks()
-        self.game.all_sprites.add(self)
-        self.game.items.add(self)
+        if self.is_item:
+            self.game.all_sprites.add(self)
+            self.game.items.add(self)
 
     def shoot(self, x, y, rot):
         if self.ammo == 0:
@@ -114,12 +122,22 @@ class Weapon(pg.sprite.Sprite):
 
     def reload(self):
         self.ammo = self.max_ammo
-        self.last_shot += 5 * self.delay
+        self.last_shot += 20 * self.delay
+
+    def toggle_item(self):
+        # will toggle between sprite and weapon for Mob
+        if not self.is_item:
+            self.is_item = True
+            self.game.all_sprites.add(self)
+            self.game.items.add(self)
+        else:
+            self.is_item = False
+            self.kill()
 
 
 class Pistol(Weapon):
-    def __init__(self, game):
-        super(Pistol, self).__init__(game, 20, 200)
+    def __init__(self, game, is_item):
+        super(Pistol, self).__init__(game, 20, 100, is_item)
         self.image = self.spritesheet.get_image(0, 0, 8, 6)
         self.image.set_colorkey(BLACK)
         self.rect = self.image.get_rect()

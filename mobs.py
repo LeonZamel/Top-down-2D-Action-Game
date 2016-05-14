@@ -60,7 +60,9 @@ class Mob(pg.sprite.Sprite):
                 bullet.kill()
                 self.kill()
                 if self.current_weapon is not None:
-                    self.current_weapon.kill()
+                    self.current_weapon.toggle_item()
+                    self.current_weapon.rect.center = self.pos
+                    self.current_weapon = None
                 if stop_playing:
                     self.game.playing = False
 
@@ -147,9 +149,18 @@ class Player(Mob):
                     if self.current_weapon is not None:
                         self.current_weapon.reload()
                 if event.key == pg.K_e:
-                    hits = pg.sprite.spritecollide(self, self.game.items, True)
-                    if hits:
-                        self.current_weapon = hits[0]
+                    if self.current_weapon is None:
+                        # pick up weapon
+                        hits = pg.sprite.spritecollide(self, self.game.items, False)
+                        if hits:
+                            self.current_weapon = hits[0]
+                            self.current_weapon.toggle_item()
+                            # will kill() itself if not an item
+                    else:
+                        # throw away weapon
+                        self.current_weapon.toggle_item()
+                        self.current_weapon.rect.center = self.pos
+                        self.current_weapon = None
 
 
 class Enemy(Mob):
