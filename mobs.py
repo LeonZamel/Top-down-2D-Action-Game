@@ -12,7 +12,7 @@ vec = pg.math.Vector2
 
 class Mob(pg.sprite.Sprite):
     def __init__(self, game, img_x, img_y, img_width, img_height, spritesheet_file, stop_game, spawn=(0, 0)):
-        pg.sprite.Sprite.__init__(self)
+        super().__init__()
         self.game = game
         # stop game if hit
         self.stop_game = stop_game
@@ -43,23 +43,45 @@ class Mob(pg.sprite.Sprite):
         # move also includes rotating
         self.check_hit()
 
+    def move_calc(self):
+        # apply friction
+        self.acc += self.vel * s.PLAYER_FRICTION
+        # equations of motion
+        self.vel += self.acc
+
+        # first move x then y for better collision detection
+        if self.vel.x != 0:
+            self.pos.x += round(self.vel.x + 0.5 * self.acc.x, 1)
+            self.hitbox.center = self.pos
+            self.check_collision('x')
+
+        if self.vel.y != 0:
+            self.pos.y += round(self.vel.y + 0.5 * self.acc.y, 1)
+            self.hitbox.center = self.pos
+            self.check_collision('y')
+
+        # set rect to new calculated pos
+        self.rect.center = self.pos
+        self.hitbox.center = self.pos
+
     def check_collision(self, axis):
         for wall in self.game.walls:
-            if self.hitbox.colliderect(wall):
-                if axis == 'x':
-                    if self.vel.x < 0:
-                        self.hitbox.left = wall.rect.right
-                    elif self.vel.x > 0:
-                        self.hitbox.right = wall.rect.left
-                    self.pos.x = self.hitbox.centerx
-                    self.rect.centerx = self.hitbox.centerx
-                else:
-                    if self.vel.y < 0:
-                        self.hitbox.top = wall.rect.bottom
-                    elif self.vel.y > 0:
-                        self.hitbox.bottom = wall.rect.top
-                    self.pos.y = self.hitbox.centery
-                    self.rect.centery = self.hitbox.centery
+            if axis == 'x':
+                if abs(wall.rect.centerx - self.pos.x) < 100:
+                    if self.hitbox.colliderect(wall):
+                        if self.vel.x < 0:
+                            self.hitbox.left = wall.rect.right
+                        elif self.vel.x > 0:
+                            self.hitbox.right = wall.rect.left
+                        self.pos.x = self.hitbox.centerx
+            else:
+                if abs(wall.rect.centery - self.pos.y) < 100:
+                    if self.hitbox.colliderect(wall):
+                        if self.vel.y < 0:
+                            self.hitbox.top = wall.rect.bottom
+                        elif self.vel.y > 0:
+                            self.hitbox.bottom = wall.rect.top
+                        self.pos.y = self.hitbox.centery
 
     def check_hit(self):
         for bullet in self.game.bullets:
@@ -104,7 +126,7 @@ class Mob(pg.sprite.Sprite):
 
 class Player(Mob):
     def __init__(self, game, spawn):
-        super(Player, self).__init__(game, 0, 0, 11, 13, "gunguy.png", True, spawn)
+        super().__init__(game, 0, 0, 11, 13, "gunguy.png", True, spawn)
         self.mouse_offset = 0
 
     def move(self):
@@ -123,36 +145,7 @@ class Player(Mob):
         if key_state[pg.K_d]:
             self.vel.x += s.PLAYER_ACCELERATION
 
-        # apply friction
-        self.acc += self.vel * s.PLAYER_FRICTION
-        # equations of motion
-        self.vel += self.acc
-
-        # first move x then y for better collision detection
-
-        self.pos.x += round(self.vel.x + 0.5 * self.acc.x, 1)
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
-        self.check_collision('x')
-
-        self.pos.y += round(self.vel.y + 0.5 * self.acc.y, 1)
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
-        self.check_collision('y')
-
-        # constrain to screen
-        if self.pos.x > s.WIDTH:
-            self.pos.x = s.WIDTH
-        if self.pos.x < 0:
-            self.pos.x = 0
-        if self.pos.y < 0:
-            self.pos.y = 0
-        if self.pos.y > s.HEIGHT:
-            self.pos.y = s.HEIGHT
-
-        # set rect to new calculated pos
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
+        self.move_calc()
 
     def act(self):
         for event in self.game.all_events:
@@ -162,7 +155,7 @@ class Player(Mob):
                 if event.key == pg.K_r:
                     if self.current_weapon is not None:
                         self.current_weapon.reload()
-                if event.key == pg.K_e:
+                elif event.key == pg.K_e:
                     if self.current_weapon is None:
                         # pick up weapon
                         hits = pg.sprite.spritecollide(self, self.game.items, False)
@@ -176,16 +169,13 @@ class Player(Mob):
                         self.current_weapon.rect.center = self.pos
                         self.current_weapon = None
 
-                if event.key == pg.K_t:
-                    print(str(self.game.clock.get_fps()))
-
 
 class Enemy(Mob):
     seeing_player = False
     last_seen_player = pg.time.get_ticks()
 
     def __init__(self, game, spawn):
-        super(Enemy, self).__init__(game, 0, 0, 11, 13, "gunguy.png", False, spawn)
+        super().__init__(game, 0, 0, 11, 13, "gunguy.png", False, spawn)
         self.player_offset = 0
 
     def move(self):
@@ -217,36 +207,7 @@ class Enemy(Mob):
             else:
                 pass
 
-        # apply friction
-        self.acc += self.vel * s.PLAYER_FRICTION
-        # equations of motion
-        self.vel += self.acc
-
-        # first move x then y for better collision detection
-
-        self.pos.x += round(self.vel.x + 0.5 * self.acc.x, 1)
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
-        self.check_collision('x')
-
-        self.pos.y += round(self.vel.y + 0.5 * self.acc.y, 1)
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
-        self.check_collision('y')
-
-        # constrain to screen
-        if self.pos.x > s.WIDTH:
-            self.pos.x = s.WIDTH
-        if self.pos.x < 0:
-            self.pos.x = 0
-        if self.pos.y < 0:
-            self.pos.y = 0
-        if self.pos.y > s.HEIGHT:
-            self.pos.y = s.HEIGHT
-
-        # set rect to new calculated pos
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
+        self.move_calc()
 
     def act(self):
         if self.current_weapon is not None:
