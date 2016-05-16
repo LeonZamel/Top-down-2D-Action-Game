@@ -1,111 +1,10 @@
 # Sprite classes for HP
-from settings import *
-import pygame as pg
 import math
+import os
+import pygame as pg
+import settings as s
+
 vec = pg.math.Vector2
-
-
-# player class
-class Player(pg.sprite.Sprite):
-    def __init__(self, game, img_x, img_y, img_width, img_height):
-        pg.sprite.Sprite.__init__(self)
-        self.game = game
-
-        self.player_spritesheet = Spritesheet(os.path.join(img_folder, "gunguy.png"))
-        self.image_orig = self.player_spritesheet.get_image(img_x, img_y, img_width, img_height)
-        self.image_orig.set_colorkey(BLACK)
-        self.image = self.image_orig
-
-        self.rect = self.image.get_rect()
-        self.hitbox = pg.rect.Rect(self.rect.x, self.rect.y, (img_width - 2) * PIXEL_MULT,
-                                   (img_height - 2) * PIXEL_MULT)
-
-        self.pos = vec(0, 0)
-        self.vel = vec(0, 0)
-        self.acc = vec(0, 0)
-        self.rot = 0
-        self.mouse_offset = 0
-
-    def update(self):
-        self.rotate()
-        self.move()
-
-    def move(self):
-        # set acc to 0 when not pressing so it will stop accelerating
-        self.acc = vec(0, 0)
-
-        # move on buttonpress
-        key_state = pg.key.get_pressed()
-        if key_state[pg.K_w]:
-            self.vel.y -= PLAYER_ACCELERATION
-        if key_state[pg.K_a]:
-            self.vel.x -= PLAYER_ACCELERATION
-        if key_state[pg.K_s]:
-            self.vel.y += PLAYER_ACCELERATION
-        if key_state[pg.K_d]:
-            self.vel.x += PLAYER_ACCELERATION
-
-        # apply friction
-        self.acc += self.vel * PLAYER_FRICTION
-        # equations of motion
-        self.vel += self.acc
-
-        # first x then y for better collision detection
-
-        self.pos.x += self.vel.x + 0.5 * self.acc.x
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
-        self.check_collision('x')
-
-        self.pos.y += self.vel.y + 0.5 * self.acc.y
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
-        self.check_collision('y')
-
-        # constrain to screen
-        if self.pos.x > WIDTH:
-            self.pos.x = WIDTH
-        if self.pos.x < 0:
-            self.pos.x = 0
-        if self.pos.y < 0:
-            self.pos.y = 0
-        if self.pos.y > HEIGHT:
-            self.pos.y = HEIGHT
-
-        # set rect to new calculated pos
-        self.rect.center = self.pos
-        self.hitbox.center = self.pos
-
-    def check_collision(self, axis):
-        for wall in self.game.walls:
-            if self.hitbox.colliderect(wall):
-                if axis == 'x':
-                    if self.vel.x < 0:
-                        self.hitbox.left = wall.rect.right
-                    elif self.vel.x > 0:
-                        self.hitbox.right = wall.rect.left
-                    self.pos.x = self.hitbox.centerx
-                    self.rect.centerx = self.hitbox.centerx
-                else:
-                    if self.vel.y < 0:
-                        self.hitbox.top = wall.rect.bottom
-                    elif self.vel.y > 0:
-                        self.hitbox.bottom = wall.rect.top
-                    self.pos.y = self.hitbox.centery
-                    self.rect.centery = self.hitbox.centery
-
-    def rotate(self):
-        # turns sprite to face towards mouse
-        mouse = pg.mouse.get_pos()
-        # calculate relative offset from mouse and angle
-        self.mouse_offset = (mouse[1] - self.rect.centery, mouse[0] - self.rect.centerx)
-        self.rot = round(-90-math.degrees(math.atan2(*self.mouse_offset)))
-
-        # make sure image keeps center
-        old_center = self.rect.center
-        self.image = pg.transform.rotate(self.image_orig, self.rot)
-        self.rect = self.image.get_rect()
-        self.rect.center = old_center
 
 
 class Spritesheet(object):
@@ -117,7 +16,7 @@ class Spritesheet(object):
         # grab an image out of a larger spritesheet
         image = pg.Surface((img_width, img_height))
         image.blit(self.spritesheet, (0, 0), (img_x, img_y, img_width, img_height))
-        image = pg.transform.scale(image, (img_width * PIXEL_MULT, img_height * PIXEL_MULT))
+        image = pg.transform.scale(image, (img_width * s.PIXEL_MULT, img_height * s.PIXEL_MULT))
         return image
 
 
@@ -126,13 +25,18 @@ class Tile(pg.sprite.Sprite):
         pg.sprite.Sprite.__init__(self)
         self.is_wall = is_wall
         self.image = None
+        # adding to groups etc. is handled by Level class
 
 
-class Level(object):
+class Level(pg.sprite.Sprite):
     # loads a level and makes its tiles
-    def __init__(self, game, level_file):
+    def __init__(self, game, level_file, t_width, t_height):
+        pg.sprite.Sprite.__init__(self)
         self.level_file = level_file
         self.game = game
+        self.spritesheet = Spritesheet(os.path.join(s.img_folder, "spritesheet.png"))
+        self.image = pg.Surface((t_width * s.TILESIZE * s.PIXEL_MULT, t_height * s.TILESIZE * s.PIXEL_MULT))
+        self.rect = self.image.get_rect()
 
     # adds all level tiles to group as sprites
     def build(self):
@@ -140,16 +44,131 @@ class Level(object):
             for ln, line in enumerate(f.readlines()):
                 for cn, char in enumerate(line):
                     try:
-                        pos = KEY[char][0]
-                        wall = KEY[char][1]
+                        pos = s.KEY[char][0]
+                        wall = s.KEY[char][1]
                         t = Tile(wall)
-                        t.image = self.game.spritesheet.get_image(pos[0], pos[1], TILESIZE, TILESIZE)
+                        t.image = self.spritesheet.get_image(pos[0], pos[1], s.TILESIZE, s.TILESIZE)
                         t.rect = t.image.get_rect()
-                        t.rect.x = cn * TILESIZE * PIXEL_MULT
-                        t.rect.y = ln * TILESIZE * PIXEL_MULT
-                        self.game.map_tiles.add(t)
-                        self.game.all_sprites.add(t)
+                        t.rect.x = cn * s.TILESIZE * s.PIXEL_MULT
+                        t.rect.y = ln * s.TILESIZE * s.PIXEL_MULT
+                        self.image.blit(t.image, (t.rect.x, t.rect.y))
                         if wall:
                             self.game.walls.add(t)
                     except KeyError:
                         pass
+
+            self.game.map.add(self)
+            self.game.all_sprites.add(self)
+
+
+class Bullet(pg.sprite.Sprite):
+    def __init__(self, game, x, y, rot):
+        pg.sprite.Sprite.__init__(self)
+        self.game = game
+        self.image = pg.Surface((1 * s.PIXEL_MULT, 1 * s.PIXEL_MULT))
+        self.image.fill(s.YELLOW)
+        self.rect = self.image.get_rect()
+        self.vel = vec(0, 0)
+        self.pos = vec(self.rect.center)
+        # convert back to radians
+        self.rot = math.radians(rot+90)
+        # set pos to "front mid" of player sprite
+        # spawn away far enough so it won't count as hit
+        self.pos = vec(x + (self.game.player.rect_orig.height / 2 + s.BULLET_SPEED) * math.cos(self.rot),
+                       y - (self.game.player.rect_orig.height / 2 + s.BULLET_SPEED) * math.sin(self.rot))
+        # calculates speed for given direction
+        self.vel = vec(s.BULLET_SPEED * math.cos(self.rot), -(s.BULLET_SPEED * math.sin(self.rot)))
+        self.rect.center = self.pos
+
+        # add to groups
+        self.game.all_sprites.add(self)
+        self.game.bullets.add(self)
+
+        if pg.sprite.spritecollide(self, self.game.walls, False):
+            self.kill()
+
+    def update(self):
+        self.pos.x += self.vel.x
+        self.pos.y += self.vel.y
+        self.rect.center = self.pos
+        if self.rect.x > s.WIDTH or self.rect.right < 0 or self.rect.top > s.HEIGHT or self.rect.y < 0:
+            self.kill()
+        if pg.sprite.spritecollide(self, self.game.walls, False):
+            self.kill()
+
+
+class Weapon(pg.sprite.Sprite):
+    def __init__(self, game, m_ammo, s_delay, is_item):
+        # ONLY parent class, can't create Weapon() instance
+        pg.sprite.Sprite.__init__(self)
+        self.game = game
+        self.spritesheet = Spritesheet(os.path.join(s.img_folder, "Weapon_sheet.png"))
+        # is_item needed to know if should be rendered or not
+        self.is_item = is_item
+        self.max_ammo = m_ammo
+        self.ammo = self.max_ammo
+        self.delay = s_delay
+        self.last_shot = pg.time.get_ticks()
+        if self.is_item:
+            self.game.all_sprites.add(self)
+            self.game.items.add(self)
+
+    def shoot(self, x, y, rot):
+        if self.ammo == 0:
+            self.reload()
+        now = pg.time.get_ticks()
+        if self.ammo > 0:
+            if now - self.last_shot > self.delay:
+                self.ammo -= 1
+                self.last_shot = now
+                Bullet(self.game, x, y, rot)
+
+    def reload(self):
+        self.ammo = self.max_ammo
+        self.last_shot += 20 * self.delay
+
+    def toggle_item(self):
+        # will toggle between sprite and weapon for Mob
+        if not self.is_item:
+            self.is_item = True
+            self.game.all_sprites.add(self)
+            self.game.items.add(self)
+        else:
+            self.is_item = False
+            self.kill()
+
+
+class Pistol(Weapon):
+    def __init__(self, game, is_item):
+        super(Pistol, self).__init__(game, 20, 100, is_item)
+        self.image = self.spritesheet.get_image(0, 0, 8, 6)
+        self.image.set_colorkey(s.BLACK)
+        self.rect = self.image.get_rect()
+
+
+class VisionRay(pg.sprite.Sprite):
+    # debugging for now
+    def __init__(self, game, mob):
+        pg.sprite.Sprite.__init__(self)
+        self.game = game
+        self.mob = mob
+        self.length = 500
+        self.image = pg.Surface((s.WIDTH, s.HEIGHT))
+        self.image.set_colorkey(s.BLACK)
+        self.image.set_alpha(50)
+
+        self.rect = self.image.get_rect()
+        self.rot = self.mob.rot
+        self.angle = 90
+
+        self.game.all_sprites.add(self)
+
+    def update(self):
+        self.rot = math.radians(self.mob.rot + 90)
+        self.make_ray()
+
+    def make_ray(self):
+        self.image.fill(s.BLACK)
+        pg.draw.line(self.image, s.YELLOW, self.mob.pos, (500 * math.cos(self.rot) + self.mob.pos.x,
+                                                          - (500 * math.sin(self.rot)) + self.mob.pos.y), 5)
+

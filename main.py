@@ -1,11 +1,8 @@
 # Hotline Python
-
 import pygame as pg
-import random
-import math
-from settings import *
-from sprites import *
-import os
+import settings as s
+import sprites
+import mobs
 
 
 class Game:
@@ -14,33 +11,48 @@ class Game:
         self.running = True
         pg.init()
         pg.mixer.init()
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT))
-        pg.display.set_caption(TITLE)
+        self.screen = pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS | pg.FULLSCREEN)
+        pg.display.set_caption(s.TITLE)
         self.clock = pg.time.Clock()
         self.playing = True
+        self.all_events = pg.event.get()
+        pg.event.set_allowed(s.ALLOWED_EVENTS)
 
         # using ordered updates so player will rendered last (on top)
         self.all_sprites = pg.sprite.OrderedUpdates()
-        self.map_tiles = pg.sprite.Group()
+        self.map = pg.sprite.Group()
         self.walls = pg.sprite.Group()
-        self.spritesheet = Spritesheet(os.path.join(img_folder, "spritesheet.png"))
+        self.bullets = pg.sprite.Group()
+        self.items = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
+        self.enemies = pg.sprite.Group()
         self.player = None
 
     def new(self):
         # start new game
         # SPRITE GROUPS
-        self.all_sprites = pg.sprite.OrderedUpdates()
         # using ordered updates so player will rendered last (on top)
-        self.map_tiles = pg.sprite.Group()
+        self.all_sprites = pg.sprite.OrderedUpdates()
+        self.map = pg.sprite.Group()
         self.walls = pg.sprite.Group()
+        self.bullets = pg.sprite.Group()
+        self.items = pg.sprite.Group()
+        self.mobs = pg.sprite.Group()
+        self.enemies = pg.sprite.Group()
 
         # OBJECTS
-        l = Level(self, "level.txt")
+        l = sprites.Level(self, "level.txt", 60, 34)
         l.build()
-        self.player = Player(self, 0, 0, 12, 12)
+        mobs.Enemy.seeing_player = False
 
-        # ADD TO SPRITE GROUP IN RIGHT ORDER
-        self.all_sprites.add(self.player)
+        e1 = mobs.Enemy(self, (400, 150))
+        e1.current_weapon = pistol1 = sprites.Pistol(self, False)
+        e2 = mobs.Enemy(self, (1200, 700))
+        # e2.current_weapon = pistol2 = sprites.Pistol(self, False)
+        self.player = mobs.Player(self, (500, 700))
+        self.player.current_weapon = pistol3 = sprites.Pistol(self, False)
+        # ADD TO SPRITE GROUP IN RIGHT ORDER, init player last
+
         # run game AFTER everything is set up
         self.run()
 
@@ -48,8 +60,8 @@ class Game:
         # game loop
         self.playing = True
         while self.playing:
-            self.clock.tick(FPS)
-            self.events()
+            self.clock.tick(s.FPS)
+            self.handle_events()
             self.update()
             self.draw()
 
@@ -58,18 +70,30 @@ class Game:
         self.all_sprites.update()
         # collision detected by sprites
 
-    def events(self):
+    def handle_events(self):
         # game loop - events
-        for event in pg.event.get():
+        # sprites do event handling their selves, they iterate through self.all_events
+        self.all_events = pg.event.get()
+        for event in self.all_events:
             # check for closing window
             if event.type == pg.QUIT:
                 if self.playing:
                     self.playing = False
                 self.running = False
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:
+                    if self.playing:
+                        self.playing = False
+                    self.running = False
+                elif event.key == pg.K_F11:
+                    if self.screen.get_flags() & pg.FULLSCREEN:
+                        pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS)
+                    else:
+                        pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS | pg.FULLSCREEN)
 
     def draw(self):
         # game loop - draw/ render
-        self.screen.fill(BLACK)
+        self.screen.fill(s.BLACK)
         self.all_sprites.draw(self.screen)
 
         # *after* drawing everything, flip the display
@@ -84,6 +108,7 @@ class Game:
         pass
 
 g = Game()
+g.show_start_screen()
 while g.running:
     g.new()
     g.show_go_screen()
