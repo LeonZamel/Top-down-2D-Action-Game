@@ -1,6 +1,8 @@
 # Hotline Python
-
-from mobs import *
+import pygame as pg
+import settings as s
+import sprites
+import mobs
 
 
 class Game:
@@ -9,11 +11,12 @@ class Game:
         self.running = True
         pg.init()
         pg.mixer.init()
-        self.screen = pg.display.set_mode((WIDTH, HEIGHT), FLAGS | pg.FULLSCREEN)
-        pg.display.set_caption(TITLE)
+        self.screen = pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS | pg.FULLSCREEN)
+        pg.display.set_caption(s.TITLE)
         self.clock = pg.time.Clock()
         self.playing = True
         self.all_events = pg.event.get()
+        pg.event.set_allowed(s.ALLOWED_EVENTS)
 
         # using ordered updates so player will rendered last (on top)
         self.all_sprites = pg.sprite.OrderedUpdates()
@@ -38,15 +41,16 @@ class Game:
         self.enemies = pg.sprite.Group()
 
         # OBJECTS
-        l = Level(self, "level.txt", 60, 34)
+        l = sprites.Level(self, "level.txt", 60, 34)
         l.build()
-        self.player = Player(self, (500, 700))
-        Enemy.seeing_player = False
-        e1 = Enemy(self, (40, 40))
-        e1.current_weapon = pistol1 = Pistol(self, False)
-        e2 = Enemy(self, (1200, 700))
-        e2.current_weapon = pistol2 = Pistol(self, False)
-        self.player.current_weapon = pistol3 = Pistol(self, False)
+        mobs.Enemy.seeing_player = False
+
+        e1 = mobs.Enemy(self, (400, 150))
+        e1.current_weapon = pistol1 = sprites.Pistol(self, False)
+        e2 = mobs.Enemy(self, (1200, 700))
+        # e2.current_weapon = pistol2 = sprites.Pistol(self, False)
+        self.player = mobs.Player(self, (500, 700))
+        self.player.current_weapon = pistol3 = sprites.Pistol(self, False)
         # ADD TO SPRITE GROUP IN RIGHT ORDER, init player last
 
         # run game AFTER everything is set up
@@ -56,14 +60,13 @@ class Game:
         # game loop
         self.playing = True
         while self.playing:
-            self.clock.tick(FPS)
+            self.clock.tick(s.FPS)
             self.handle_events()
             self.update()
             self.draw()
 
     def update(self):
         # game loop - update
-        pg.display.set_caption(TITLE + str(self.clock.get_fps()))
         self.all_sprites.update()
         # collision detected by sprites
 
@@ -84,13 +87,13 @@ class Game:
                     self.running = False
                 elif event.key == pg.K_F11:
                     if self.screen.get_flags() & pg.FULLSCREEN:
-                        pg.display.set_mode((WIDTH, HEIGHT), FLAGS)
+                        pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS)
                     else:
-                        pg.display.set_mode((WIDTH, HEIGHT), FLAGS | pg.FULLSCREEN)
+                        pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS | pg.FULLSCREEN)
 
     def draw(self):
         # game loop - draw/ render
-        self.screen.fill(BLACK)
+        self.screen.fill(s.BLACK)
         self.all_sprites.draw(self.screen)
 
         # *after* drawing everything, flip the display
