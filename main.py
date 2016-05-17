@@ -1,4 +1,6 @@
 # Hotline Python
+
+import os
 import pygame as pg
 import settings as s
 import sprites
@@ -40,7 +42,7 @@ class Game:
         self.enemies = pg.sprite.Group()
 
         # OBJECTS
-        l = sprites.Level(self, "level.txt", 60, 34)
+        l = sprites.Level(self, os.path.join(s.map_folder, "level.txt"), 60, 34)
         l.build()
         mobs.Enemy.seeing_player = False
 

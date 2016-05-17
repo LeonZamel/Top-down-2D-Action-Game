@@ -136,13 +136,13 @@ class Player(Mob):
 
         # move on buttonpress
         key_state = pg.key.get_pressed()
-        if key_state[pg.K_w]:
+        if key_state[s.move_up]:
             self.vel.y -= s.PLAYER_ACCELERATION
-        if key_state[pg.K_a]:
-            self.vel.x -= s.PLAYER_ACCELERATION
-        if key_state[pg.K_s]:
+        if key_state[s.move_down]:
             self.vel.y += s.PLAYER_ACCELERATION
-        if key_state[pg.K_d]:
+        if key_state[s.move_left]:
+            self.vel.x -= s.PLAYER_ACCELERATION
+        if key_state[s.move_right]:
             self.vel.x += s.PLAYER_ACCELERATION
 
         self.move_calc()

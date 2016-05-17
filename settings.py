@@ -1,10 +1,25 @@
 import os
+import configparser
 import pygame as pg
+
+
 pg.mixer.pre_init(44100, -16, 2, 512)
 pg.mixer.init()
 
-WIDTH = 1920
-HEIGHT = 1080
+# CUSTOM SETTINGS (by user)
+config = configparser.ConfigParser()
+config.read("settings.cfg")
+move_up = getattr(pg, "K_" + (config.get("CONTROLS", "up")).lower())
+move_down = getattr(pg, "K_" + (config.get("CONTROLS", "down")).lower())
+move_left = getattr(pg, "K_" + (config.get("CONTROLS", "left")).lower())
+move_right = getattr(pg, "K_" + (config.get("CONTROLS", "right")).lower())
+
+WIDTH = int(config.get("WINDOW", "width"))
+HEIGHT = int(config.get("WINDOW", "height"))
+
+
+
+
 FPS = 120
 TITLE = "Hotline Python!"
 FLAGS = pg.DOUBLEBUF | pg.HWSURFACE | pg.HWACCEL
@@ -16,8 +31,10 @@ TILESIZE = 8
 BULLET_SPEED = 20
 # set up assets path
 game_folder = os.path.dirname(__file__)
-img_folder = "img"
-snd_folder = "snd"
+resource_folder = "resources"
+map_folder = os.path.join(resource_folder, "maps")
+img_folder = os.path.join(resource_folder, "img")
+snd_folder = os.path.join(resource_folder, "snd")
 
 gun_shot = pg.mixer.Sound(os.path.join(snd_folder, "shot1.wav"))
 gun_shot.set_volume(0.3)
