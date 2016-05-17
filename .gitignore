@@ -111,4 +111,7 @@ $RECYCLE.BIN/
 # Pycharm
 .idea
 
+# VS Code
+.vscode
+
 setup-cx.py
