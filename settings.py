@@ -17,9 +17,6 @@ move_right = getattr(pg, "K_" + (config.get("CONTROLS", "right")).lower())
 WIDTH = int(config.get("WINDOW", "width"))
 HEIGHT = int(config.get("WINDOW", "height"))
 
-
-
-
 FPS = 120
 TITLE = "Hotline Python!"
 FLAGS = pg.DOUBLEBUF | pg.HWSURFACE | pg.HWACCEL

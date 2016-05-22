@@ -12,11 +12,11 @@ class Spritesheet(object):
     def __init__(self, filename):
         self.spritesheet = pg.image.load(filename).convert()
 
-    def get_image(self, img_x, img_y, img_width, img_height):
+    def get_image(self, img_pos, img_dim):
         # grab an image out of a larger spritesheet
-        image = pg.Surface((img_width, img_height))
-        image.blit(self.spritesheet, (0, 0), (img_x, img_y, img_width, img_height))
-        image = pg.transform.scale(image, (img_width * s.PIXEL_MULT, img_height * s.PIXEL_MULT))
+        image = pg.Surface((img_dim[0], img_dim[1]))
+        image.blit(self.spritesheet, (0, 0), (img_pos, img_dim))
+        image = pg.transform.scale(image, (img_dim[0] * s.PIXEL_MULT, img_dim[1] * s.PIXEL_MULT))
         return image
 
 
@@ -47,7 +47,7 @@ class Level(pg.sprite.Sprite):
                         pos = s.KEY[char][0]
                         wall = s.KEY[char][1]
                         t = Tile(wall)
-                        t.image = self.spritesheet.get_image(pos[0], pos[1], s.TILESIZE, s.TILESIZE)
+                        t.image = self.spritesheet.get_image(pos, (s.TILESIZE, s.TILESIZE))
                         t.rect = t.image.get_rect()
                         t.rect.x = cn * s.TILESIZE * s.PIXEL_MULT
                         t.rect.y = ln * s.TILESIZE * s.PIXEL_MULT
@@ -98,7 +98,7 @@ class Bullet(pg.sprite.Sprite):
 
 
 class Weapon(pg.sprite.Sprite):
-    def __init__(self, game, m_ammo, s_delay, is_item, sound):
+    def __init__(self, game, m_ammo, delay, is_item, sound):
         # ONLY parent class, can't create Weapon() instance
         super().__init__()
         self.game = game
@@ -108,7 +108,7 @@ class Weapon(pg.sprite.Sprite):
         self.is_item = is_item
         self.max_ammo = m_ammo
         self.ammo = self.max_ammo
-        self.delay = s_delay
+        self.delay = delay
         self.last_shot = pg.time.get_ticks()
         if self.is_item:
             self.game.all_sprites.add(self)
@@ -124,6 +124,7 @@ class Weapon(pg.sprite.Sprite):
                 self.ammo -= 1
                 self.last_shot = now
                 Bullet(self.game, x, y, rot)
+                return True
 
     def reload(self):
         if self.ammo != self.max_ammo:
@@ -143,8 +144,8 @@ class Weapon(pg.sprite.Sprite):
 
 class Pistol(Weapon):
     def __init__(self, game, is_item):
-        super().__init__(game, 20, 100, is_item, s.gun_shot)
-        self.image = self.spritesheet.get_image(0, 0, 8, 6)
+        super().__init__(game, 20, 200, is_item, s.gun_shot)
+        self.image = self.spritesheet.get_image((0, 0), (8, 6))
         self.image.set_colorkey(s.BLACK)
         self.rect = self.image.get_rect()
 

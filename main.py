@@ -51,7 +51,9 @@ class Game:
         e2 = mobs.Enemy(self, (1200, 700))
         # e2.current_weapon = pistol2 = sprites.Pistol(self, False)
         self.player = mobs.Player(self, (500, 700))
-        self.player.current_weapon = pistol3 = sprites.Pistol(self, False)
+        pistol3 = sprites.Pistol(self, True)
+        pistol3.rect.x = 200
+        pistol3.rect.y = 800
         # ADD TO SPRITE GROUP IN RIGHT ORDER, init player last
 
         # run game AFTER everything is set up
