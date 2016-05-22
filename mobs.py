@@ -11,14 +11,29 @@ vec = pg.math.Vector2
 
 
 class Mob(pg.sprite.Sprite):
-    def __init__(self, game, img_x, img_y, img_width, img_height, spritesheet_file, stop_game, spawn=(0, 0)):
+    def __init__(self, game, img_dim, spritesheet_file, stop_game, spawn=(0, 0)):
         super().__init__()
         self.game = game
         # stop game if hit
         self.stop_game = stop_game
 
+        self.img_dim = img_dim
+        self.animation = None
+        self.last_anim = pg.time.get_ticks()
+        self.anim_data = {
+            "melee": {
+                "time": 100,
+                "coords": [(0, 0), (0, img_dim[1])]
+            },
+            "weapon": {
+                "time": 100,
+                "coords": [(img_dim[0], 0), (img_dim[0], img_dim[1])]
+            }
+        }
+        self.anim_frame = 0
+
         self.spritesheet = sprites.Spritesheet(os.path.join(s.img_folder, spritesheet_file))
-        self.image_orig = self.spritesheet.get_image(img_x, img_y, img_width, img_height)
+        self.image_orig = self.spritesheet.get_image(self.anim_data["melee"]["coords"][0], img_dim)
         self.image_orig.set_colorkey(s.BLACK)
         self.image = self.image_orig
         self.rect_orig = self.image.get_rect()
@@ -26,6 +41,8 @@ class Mob(pg.sprite.Sprite):
         self.hitbox = pg.rect.Rect(self.rect.x, self.rect.y, self.rect_orig.width - 2 * s.PIXEL_MULT,
                                    self.rect_orig.height - 2 * s.PIXEL_MULT)
         self.hitbox.center = self.rect_orig.center
+
+        self.last_punch = pg.time.get_ticks()
 
         self.pos = vec(spawn[0], spawn[1])
         self.vel = vec(0, 0)
@@ -39,6 +56,7 @@ class Mob(pg.sprite.Sprite):
 
     def update(self):
         self.act()
+        self.animate()
         self.move()
         # move also includes rotating
         self.check_hit()
@@ -86,20 +104,29 @@ class Mob(pg.sprite.Sprite):
     def check_hit(self):
         for bullet in self.game.bullets:
             if self.hitbox.colliderect(bullet):
+                s.hit.play()
                 bullet.kill()
                 self.kill()
 
     def attack(self):
         if self.current_weapon is not None:
-            self.current_weapon.shoot(self.rect.centerx, self.rect.centery, self.rot)
+            if self.current_weapon.shoot(self.rect.centerx, self.rect.centery, self.rot):
+                # checks if can shoot only, then wil animate
+                self.animation = "weapon"
         else:
             self.punch()
 
     def punch(self):
-        for mob in self.game.mobs:
-            if mob is not self:
-                if self.hitbox.colliderect(mob):
-                    mob.kill()
+        now = pg.time.get_ticks()
+        if now - self.last_punch > 300:
+            self.animation = "melee"
+            self.last_punch = now
+            s.punch.play()
+            for mob in self.game.mobs:
+                if mob is not self:
+                    if self.hitbox.colliderect(mob):
+                        s.hit.play()
+                        mob.kill()
 
     def rotate(self, point):
         # turns sprite to face towards player
@@ -117,16 +144,27 @@ class Mob(pg.sprite.Sprite):
         super().kill()
         if self.stop_game:
             self.game.playing = False
-
         if self.current_weapon is not None:
             self.current_weapon.toggle_item()
             self.current_weapon.rect.center = self.pos
             self.current_weapon = None
 
+    def animate(self):
+        if self.animation is not None:
+            now = pg.time.get_ticks()
+            if now - self.last_anim > self.anim_data[self.animation]["time"]:
+                self.last_anim = now
+                self.anim_frame = (self.anim_frame + 1) % len(self.anim_data[self.animation]["coords"])
+                self.image_orig = self.spritesheet.get_image(self.anim_data[self.animation]["coords"][self.anim_frame],
+                                                             self.img_dim)
+                self.image_orig.set_colorkey(s.BLACK)
+                if self.anim_frame == 0:
+                    self.animation = None
+
 
 class Player(Mob):
     def __init__(self, game, spawn):
-        super().__init__(game, 0, 0, 11, 13, "gunguy.png", True, spawn)
+        super().__init__(game, (11, 13), "gunguy.png", True, spawn)
         self.mouse_offset = 0
 
     def move(self):
@@ -162,21 +200,32 @@ class Player(Mob):
                         if hits:
                             self.current_weapon = hits[0]
                             self.current_weapon.toggle_item()
-                            # will kill() itself if not an item
+                            self.image_orig = self.spritesheet.get_image(self.anim_data["weapon"]["coords"][0],
+                                                       (self.img_dim))
+                            self.image_orig.set_colorkey(s.BLACK)
+                            # will kill() itself if not an item anymore
                     else:
                         # throw away weapon
                         self.current_weapon.toggle_item()
                         self.current_weapon.rect.center = self.pos
                         self.current_weapon = None
+                        self.image_orig = self.spritesheet.get_image(self.anim_data["melee"]["coords"][0],
+                                                                     (self.img_dim))
+                        self.image_orig.set_colorkey(s.BLACK)
 
 
 class Enemy(Mob):
     seeing_player = False
     last_seen_player = pg.time.get_ticks()
 
-    def __init__(self, game, spawn):
-        super().__init__(game, 0, 0, 11, 13, "gunguy.png", False, spawn)
+    def __init__(self, game, spawn, weapon=None):
+        super().__init__(game, (11, 13), "gunguy.png", False, spawn)
         self.player_offset = 0
+        self.current_weapon = weapon
+        if self.current_weapon is not None:
+            self.image_orig = self.spritesheet.get_image(self.anim_data["weapon"]["coords"][0], self.img_dim)
+            self.image_orig.set_colorkey(s.BLACK)
+            self.image = self.image_orig
 
     def move(self):
         if Enemy.seeing_player:
