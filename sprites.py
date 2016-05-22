@@ -126,8 +126,9 @@ class Weapon(pg.sprite.Sprite):
                 Bullet(self.game, x, y, rot)
 
     def reload(self):
-        self.ammo = self.max_ammo
-        self.last_shot += 20 * self.delay
+        if self.ammo != self.max_ammo:
+            self.ammo = self.max_ammo
+            self.last_shot += 20 * self.delay
 
     def toggle_item(self):
         # will toggle between sprite and weapon for Mob
