@@ -1,4 +1,6 @@
 # Hotline Python
+
+import os
 import pygame as pg
 import settings as s
 import sprites
@@ -10,7 +12,6 @@ class Game:
         # initialize game, pg and create window
         self.running = True
         pg.init()
-        pg.mixer.init()
         self.screen = pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS | pg.FULLSCREEN)
         pg.display.set_caption(s.TITLE)
         self.clock = pg.time.Clock()
@@ -41,7 +42,7 @@ class Game:
         self.enemies = pg.sprite.Group()
 
         # OBJECTS
-        l = sprites.Level(self, "level.txt", 60, 34)
+        l = sprites.Level(self, os.path.join(s.map_folder, "level.txt"), 60, 34)
         l.build()
         mobs.Enemy.seeing_player = False
 
@@ -90,8 +91,11 @@ class Game:
                         pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS)
                     else:
                         pg.display.set_mode((s.WIDTH, s.HEIGHT), s.FLAGS | pg.FULLSCREEN)
+                elif event.key == pg.K_t:
+                    print(str(self.clock.get_fps()))
 
     def draw(self):
+        pg.display.set_caption(s.TITLE + str(self.clock.get_fps()))
         # game loop - draw/ render
         self.screen.fill(s.BLACK)
         self.all_sprites.draw(self.screen)

@@ -22,7 +22,7 @@ class Spritesheet(object):
 
 class Tile(pg.sprite.Sprite):
     def __init__(self, is_wall):
-        pg.sprite.Sprite.__init__(self)
+        super().__init__()
         self.is_wall = is_wall
         self.image = None
         # adding to groups etc. is handled by Level class
@@ -31,7 +31,7 @@ class Tile(pg.sprite.Sprite):
 class Level(pg.sprite.Sprite):
     # loads a level and makes its tiles
     def __init__(self, game, level_file, t_width, t_height):
-        pg.sprite.Sprite.__init__(self)
+        super().__init__()
         self.level_file = level_file
         self.game = game
         self.spritesheet = Spritesheet(os.path.join(s.img_folder, "spritesheet.png"))
@@ -63,7 +63,7 @@ class Level(pg.sprite.Sprite):
 
 class Bullet(pg.sprite.Sprite):
     def __init__(self, game, x, y, rot):
-        pg.sprite.Sprite.__init__(self)
+        super().__init__()
         self.game = game
         self.image = pg.Surface((1 * s.PIXEL_MULT, 1 * s.PIXEL_MULT))
         self.image.fill(s.YELLOW)
@@ -74,10 +74,10 @@ class Bullet(pg.sprite.Sprite):
         self.rot = math.radians(rot+90)
         # set pos to "front mid" of player sprite
         # spawn away far enough so it won't count as hit
-        self.pos = vec(x + (self.game.player.rect_orig.height / 2 + s.BULLET_SPEED) * math.cos(self.rot),
-                       y - (self.game.player.rect_orig.height / 2 + s.BULLET_SPEED) * math.sin(self.rot))
+        self.pos = vec(x + round((self.game.player.rect_orig.height / 2 + s.BULLET_SPEED) * math.cos(self.rot), 1),
+                       y - round((self.game.player.rect_orig.height / 2 + s.BULLET_SPEED) * math.sin(self.rot), 1))
         # calculates speed for given direction
-        self.vel = vec(s.BULLET_SPEED * math.cos(self.rot), -(s.BULLET_SPEED * math.sin(self.rot)))
+        self.vel = vec(round(s.BULLET_SPEED * math.cos(self.rot), 1), - round(s.BULLET_SPEED * math.sin(self.rot), 1))
         self.rect.center = self.pos
 
         # add to groups
@@ -98,12 +98,13 @@ class Bullet(pg.sprite.Sprite):
 
 
 class Weapon(pg.sprite.Sprite):
-    def __init__(self, game, m_ammo, s_delay, is_item):
+    def __init__(self, game, m_ammo, s_delay, is_item, sound):
         # ONLY parent class, can't create Weapon() instance
-        pg.sprite.Sprite.__init__(self)
+        super().__init__()
         self.game = game
         self.spritesheet = Spritesheet(os.path.join(s.img_folder, "Weapon_sheet.png"))
         # is_item needed to know if should be rendered or not
+        self.sound = sound
         self.is_item = is_item
         self.max_ammo = m_ammo
         self.ammo = self.max_ammo
@@ -119,13 +120,15 @@ class Weapon(pg.sprite.Sprite):
         now = pg.time.get_ticks()
         if self.ammo > 0:
             if now - self.last_shot > self.delay:
+                self.sound.play()
                 self.ammo -= 1
                 self.last_shot = now
                 Bullet(self.game, x, y, rot)
 
     def reload(self):
-        self.ammo = self.max_ammo
-        self.last_shot += 20 * self.delay
+        if self.ammo != self.max_ammo:
+            self.ammo = self.max_ammo
+            self.last_shot += 20 * self.delay
 
     def toggle_item(self):
         # will toggle between sprite and weapon for Mob
@@ -140,7 +143,7 @@ class Weapon(pg.sprite.Sprite):
 
 class Pistol(Weapon):
     def __init__(self, game, is_item):
-        super(Pistol, self).__init__(game, 20, 100, is_item)
+        super().__init__(game, 20, 100, is_item, s.gun_shot)
         self.image = self.spritesheet.get_image(0, 0, 8, 6)
         self.image.set_colorkey(s.BLACK)
         self.rect = self.image.get_rect()
@@ -149,7 +152,7 @@ class Pistol(Weapon):
 class VisionRay(pg.sprite.Sprite):
     # debugging for now
     def __init__(self, game, mob):
-        pg.sprite.Sprite.__init__(self)
+        super().__init__(self)
         self.game = game
         self.mob = mob
         self.length = 500
