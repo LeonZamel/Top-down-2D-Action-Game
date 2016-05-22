@@ -17,6 +17,8 @@ move_right = getattr(pg, "K_" + (config.get("CONTROLS", "right")).lower())
 WIDTH = int(config.get("WINDOW", "width"))
 HEIGHT = int(config.get("WINDOW", "height"))
 
+volume = float(config.get("SOUND", "volume"))
+
 FPS = 120
 TITLE = "Hotline Python!"
 FLAGS = pg.DOUBLEBUF | pg.HWSURFACE | pg.HWACCEL
@@ -34,7 +36,11 @@ img_folder = os.path.join(resource_folder, "img")
 snd_folder = os.path.join(resource_folder, "snd")
 
 gun_shot = pg.mixer.Sound(os.path.join(snd_folder, "shot1.wav"))
-gun_shot.set_volume(0.3)
+gun_shot.set_volume(volume)
+punch = pg.mixer.Sound(os.path.join(snd_folder, "punch.wav"))
+punch.set_volume(0.3 * volume)
+hit = pg.mixer.Sound(os.path.join(snd_folder, "hit.wav"))
+hit.set_volume(volume)
 
 # player properties
 PLAYER_ACCELERATION = 0.9
